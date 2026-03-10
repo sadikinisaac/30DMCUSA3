@@ -237,11 +237,17 @@
         // Initialize the map - center on USA
         const map = L.map('map').setView([39.5, -98.0], 4);
         
-        // Add a dark base layer (Stadia Maps)
-        L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-            maxZoom: 20,
-            attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>'
+        // Use CartoDB Voyager (free, no API key required)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
         }).addTo(map);
+        
+        // Alternative: OpenStreetMap standard (also free)
+        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     maxZoom: 19,
+        //     attribution: '© OpenStreetMap contributors'
+        // }).addTo(map);
         
         // Store visited cities and states
         const visitedStates = new Set();
