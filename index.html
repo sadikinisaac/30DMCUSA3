@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 3 - Polygons · USA States · 30DayMapChallenge 2024</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Turf.js for point-in-polygon calculations -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { height: 100%; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        #map {
+            height: 70vh;
+            width: 100%;
+            z-index: 1;
+        }
+        
+        #info-panel {
+            height: 30vh;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+        }
+        
+        #title-bar {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        #title-bar h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #title-bar h1 i {
+            color: #f39c12;
+        }
+        
+        #title-bar .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        #stats-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        #stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        #states-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .state-badge {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .state-name {
+            font-weight: bold;
+            color: #1e3c72;
+        }
+        
+        .state-cities {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .visited-state {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        #cities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .city-tag {
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .city-tag i {
+            color: #e74c3c;
+        }
+        
+        .footer-note {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 0.8rem;
+        }
+        
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(8px);
+            padding: 12px 20px;
+            border-radius: 40px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .state-highlight {
+            stroke: #f39c12;
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 8px rgba(243, 156, 18, 0.5));
+        }
+        
+        @media (max-width: 768px) {
+            #title-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+            #stats-value { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="title-bar">
+        <h1>
+            <i class="fas fa-draw-polygon"></i>
+            Day 3 - Polygons · USA States
+            <span style="font-size: 0.9rem; margin-left: 10px; opacity: 0.8;">30DayMapChallenge 2024</span>
+        </h1>
+        <div class="badge">
+            <i class="fas fa-map-pin"></i> 5 cities · <i class="fas fa-star"></i> Point-in-polygon with Turf.js
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div id="info-panel">
+        <div id="stats-card">
+            <div>
+                <i class="fas fa-flag-usa" style="font-size: 2rem; opacity: 0.8;"></i>
+                <div style="font-size: 0.9rem; margin-top: 5px;">States containing visited cities</div>
+            </div>
+            <div>
+                <span id="stats-value">0</span>
+                <span style="font-size: 1rem; opacity: 0.8;">/ 5 cities</span>
+            </div>
+        </div>
+        
+        <h3 style="margin-bottom: 10px;"><i class="fas fa-map-marked-alt" style="color:#f39c12;"></i> US States detected</h3>
+        <div id="states-grid"></div>
+        
+        <h3 style="margin: 20px 0 10px 0;"><i class="fas fa-city" style="color:#f39c12;"></i> Your visited cities</h3>
+        <div id="cities-list"></div>
+        
+        <div class="footer-note">
+            <i class="fas fa-code-branch"></i> Day 3 - Polygons · Point-in-polygon analysis with Turf.js · US States from GeoJSON
+        </div>
+    </div>
+    
+    <div id="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #d4edda; border: 2px solid #28a745;"></div>
+            <span>Visited state</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f8f9fa; border: 1px solid #ccc;"></div>
+            <span>Other state</span>
+        </div>
+        <div class="legend-item">
+            <i class="fas fa-map-pin" style="color: #e74c3c;"></i>
+            <span>Visited city</span>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Initialize the map - center on USA
+        const map = L.map('map').setView([39.5, -98.0], 4);
+        
+        // Add a dark base layer (Stadia Maps)
+        L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>'
+        }).addTo(map);
+        
+        // Store visited cities and states
+        const visitedStates = new Set();
+        const stateCityMap = new Map(); // state -> array of cities
+        let cityMarkers = [];
+        
+        // Custom icon for city markers
+        const cityIcon = L.divIcon({
+            className: 'city-marker',
+            html: '<i class="fas fa-map-pin" style="color: #e74c3c; font-size: 28px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);"></i>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+            popupAnchor: [0, -28]
+        });
+        
+        // First, load cities
+        fetch('cities.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load cities.json');
+                }
+                return response.json();
+            })
+            .then(cityData => {
+                console.log('Cities loaded:', cityData);
+                
+                // Extract city coordinates for point-in-polygon testing
+                const cityCoordinates = [];
+                
+                cityData.features.forEach(feature => {
+                    const lng = feature.geometry.coordinates[0];
+                    const lat = feature.geometry.coordinates[1];
+                    const name = feature.properties.name;
+                    const state = feature.properties.state;
+                    
+                    cityCoordinates.push({
+                        name: name,
+                        state: state,
+                        lat: lat,
+                        lng: lng,
+                        point: turf.point([lng, lat])
+                    });
+                    
+                    // Add city marker to map
+                    const marker = L.marker([lat, lng], { icon: cityIcon }).addTo(map);
+                    
+                    // Rich popup content
+                    marker.bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h3 style="margin:0 0 5px 0; color:#1e3c72;">${name}</h3>
+                            <div style="font-size:12px; color:#666;">${state}</div>
+                            <p style="margin:8px 0 0 0; font-size:12px;">${feature.properties.description || 'Visited city'}</p>
+                        </div>
+                    `);
+                    
+                    cityMarkers.push(marker);
+                });
+                
+                // Now load US States GeoJSON
+                return fetch('https://raw.githubusercontent.com/python-visualization/folium/master/examples/data/us-states.json')
+                    .then(response => response.json())
+                    .then(usData => {
+                        console.log('US States loaded:', usData);
+                        
+                        // Add US States polygons
+                        const stateLayer = L.geoJSON(usData, {
+                            style: function(feature) {
+                                // Default style
+                                return {
+                                    color: '#666',
+                                    weight: 1,
+                                    fillColor: '#f8f9fa',
+                                    fillOpacity: 0.3
+                                };
+                            },
+                            onEachFeature: function(feature, layer) {
+                                const stateName = feature.properties.name;
+                                let citiesInState = [];
+                                
+                                // Check each city if it's in this state polygon
+                                cityCoordinates.forEach(city => {
+                                    const cityPoint = city.point;
+                                    let isInside = false;
+                                    
+                                    // Handle both Polygon and MultiPolygon geometries
+                                    if (feature.geometry.type === 'Polygon') {
+                                        const polygon = turf.polygon(feature.geometry.coordinates);
+                                        isInside = turf.booleanPointInPolygon(cityPoint, polygon);
+                                    } else if (feature.geometry.type === 'MultiPolygon') {
+                                        const multiPolygon = turf.multiPolygon(feature.geometry.coordinates);
+                                        isInside = turf.booleanPointInPolygon(cityPoint, multiPolygon);
+                                    }
+                                    
+                                    if (isInside) {
+                                        citiesInState.push(city.name);
+                                        visitedStates.add(stateName);
+                                        
+                                        // Store in map
+                                        if (!stateCityMap.has(stateName)) {
+                                            stateCityMap.set(stateName, []);
+                                        }
+                                        stateCityMap.get(stateName).push(city.name);
+                                    }
+                                });
+                                
+                                // Customize style if state contains visited cities
+                                if (citiesInState.length > 0) {
+                                    layer.setStyle({
+                                        color: '#f39c12',
+                                        weight: 3,
+                                        fillColor: '#d4edda',
+                                        fillOpacity: 0.5
+                                    });
+                                }
+                                
+                                // Create popup with state info
+                                const popupContent = `
+                                    <div style="min-width: 200px;">
+                                        <h3 style="margin:0 0 5px 0; color:#1e3c72;">${stateName}</h3>
+                                        ${citiesInState.length > 0 ? `
+                                            <div style="background: #d4edda; padding: 8px; border-radius: 5px; margin: 8px 0;">
+                                                <i class="fas fa-check-circle" style="color:#28a745;"></i>
+                                                <strong>Visited cities:</strong><br>
+                                                ${citiesInState.join(', ')}
+                                            </div>
+                                        ` : '<p style="color:#666;">No visited cities in this state</p>'}
+                                    </div>
+                                `;
+                                
+                                layer.bindPopup(popupContent);
+                            }
+                        }).addTo(map);
+                        
+                        // Update UI with results
+                        document.getElementById('stats-value').textContent = visitedStates.size;
+                        
+                        // Populate states grid
+                        const statesGrid = document.getElementById('states-grid');
+                        statesGrid.innerHTML = '';
+                        
+                        // Sort states alphabetically
+                        const sortedStates = Array.from(visitedStates).sort();
+                        
+                        sortedStates.forEach(state => {
+                            const cities = stateCityMap.get(state) || [];
+                            const stateDiv = document.createElement('div');
+                            stateDiv.className = 'state-badge visited-state';
+                            stateDiv.innerHTML = `
+                                <div class="state-name">${state}</div>
+                                <div class="state-cities">${cities.join(' · ')}</div>
+                            `;
+                            statesGrid.appendChild(stateDiv);
+                        });
+                        
+                        if (sortedStates.length === 0) {
+                            statesGrid.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">No states detected yet. Loading US data...</p>';
+                        }
+                        
+                        // Populate cities list
+                        const citiesList = document.getElementById('cities-list');
+                        citiesList.innerHTML = '';
+                        
+                        cityData.features.forEach(feature => {
+                            const cityDiv = document.createElement('div');
+                            cityDiv.className = 'city-tag';
+                            cityDiv.innerHTML = `
+                                <i class="fas fa-map-pin"></i>
+                                <span><strong>${feature.properties.name}</strong> (${feature.properties.state})</span>
+                            `;
+                            citiesList.appendChild(cityDiv);
+                        });
+                        
+                        // Fit map to show all states
+                        map.fitBounds(stateLayer.getBounds(), { padding: [20, 20] });
+                    });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Show error message on map
+                L.popup()
+                    .setLatLng([39.5, -98.0])
+                    .setContent('⚠️ Failed to load data. Make sure cities.json exists and US States GeoJSON is accessible.')
+                    .openOn(map);
+                    
+                document.getElementById('stats-value').textContent = 'Error';
+            });
+    </script>
+</body>
+</html>

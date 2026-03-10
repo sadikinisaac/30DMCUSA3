@@ -1,0 +1,75 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-118.2437, 34.0522]
+            },
+            "properties": {
+                "name": "Los Angeles",
+                "state": "California",
+                "type": "city",
+                "order": 1,
+                "description": "Start of the epic California road trip. Explored Hollywood, Santa Monica Pier, and amazing taco spots."
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-112.1126, 36.1069]
+            },
+            "properties": {
+                "name": "Grand Canyon",
+                "state": "Arizona",
+                "type": "national-park",
+                "order": 2,
+                "description": "Watched the sunrise over the South Rim. Absolutely breathtaking views that photos can't capture."
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-120.0262, 39.0968]
+            },
+            "properties": {
+                "name": "Lake Tahoe",
+                "state": "California",
+                "type": "lake",
+                "order": 3,
+                "description": "Hiked the Eagle Falls trail and saw the most incredible blue water. The alpine scenery is unreal."
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-115.1398, 36.1699]
+            },
+            "properties": {
+                "name": "Las Vegas",
+                "state": "Nevada",
+                "type": "casino",
+                "order": 4,
+                "description": "Walked the Strip, saw the Bellagio fountains, and tried my luck at the tables."
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-122.4194, 37.7749]
+            },
+            "properties": {
+                "name": "San Francisco",
+                "state": "California",
+                "type": "city",
+                "order": 5,
+                "description": "Biked across the Golden Gate Bridge, ate clam chowder at Fisherman's Wharf, and rode the cable cars."
+            }
+        }
+    ]
+}
